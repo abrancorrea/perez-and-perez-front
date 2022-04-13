@@ -39,7 +39,7 @@ const CreateForm = ({ isOpen, onClose, clientId }) => {
   useEffect(() => {
     if (isOpen) setFormData({ ...initialState, client_id: clientId });
     else setFormData(initialState);
-  }, [isOpen]);
+  }, [isOpen, clientId]);
 
   return (
     <>
