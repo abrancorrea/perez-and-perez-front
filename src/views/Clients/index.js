@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Icon, IconButton } from "@chakra-ui/react";
+import { DateTime } from "luxon";
 import CreateForm from "./CreateForm";
 import DataTable from "../../components/DataTable";
 import { MdRemoveRedEye } from "react-icons/md";
 import TableTitle from "../../components/TableTitle";
+import API from "../../lib/api";
 
 const Clients = () => {
   const navigate = useNavigate();
@@ -28,6 +30,7 @@ const Clients = () => {
       {
         Header: "Fecha de creacion",
         accessor: "created_at",
+        Cell: ({ value }) => DateTime.fromISO(value).toFormat("yyyy-MM-dd hh:mm"),
       },
       {
         id: "edit",
@@ -50,16 +53,8 @@ const Clients = () => {
   const getClients = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data } = await new Promise((res) => {
-        setTimeout(() => {
-          res({
-            data: [
-              { id: 1, name: "John", created_at: "2020-10-10" },
-              { id: 2, name: "Doe", created_at: "2020-10-10" },
-            ],
-          });
-        }, 1000);
-      });
+      const { data } = await API.get("/clients");
+      // console.log("clients", data);
       setTableList(data);
     } catch (err) {
       console.log(err);
@@ -72,7 +67,7 @@ const Clients = () => {
   }, [getClients]);
 
   const onCloseForm = (obj = false) => {
-    if (obj) setTableList((s) => [...s, { ...obj, created_at: "2022-10-10" }]);
+    if (obj) setTableList((s) => [...s, obj]);
     setIsOpenForm(false);
   };
 

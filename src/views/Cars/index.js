@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Container, Icon, IconButton } from "@chakra-ui/react";
+import { DateTime } from "luxon";
+import { ArrowBackIcon } from "@chakra-ui/icons";
 import CreateForm from "./CreateForm";
 import DataTable from "../../components/DataTable";
 import { MdRemoveRedEye } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import TableTitle from "../../components/TableTitle";
+import API from "../../lib/api";
 
 const Cars = () => {
   let { id } = useParams();
@@ -34,6 +37,7 @@ const Cars = () => {
       {
         Header: "Fecha de creacion",
         accessor: "created_at",
+        Cell: ({ value }) => DateTime.fromISO(value).toFormat("yyyy-MM-dd hh:mm"),
       },
       {
         id: "edit",
@@ -55,29 +59,22 @@ const Cars = () => {
   );
 
   const onCloseForm = (obj = false) => {
-    if (obj) setTableList((s) => [...s, { ...obj, created_at: "2022-10-10" }]);
+    if (obj) setTableList((s) => [...s, obj]);
     setIsOpenForm(false);
   };
 
   const getCars = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data } = await new Promise((res) => {
-        setTimeout(() => {
-          res({
-            data: [
-              { id: 1, name: "John", created_at: "2020-10-10" },
-              { id: 2, name: "Doe", created_at: "2020-10-10" },
-            ],
-          });
-        }, 1000);
-      });
+      const { data } = await API.get("/cars", { params: { clientId: id } });
       setTableList(data);
     } catch (err) {
       console.log(err);
     }
     setIsLoading(false);
-  }, []);
+  }, [id]);
+
+  const backAction = () => navigate(-1);
 
   useEffect(() => {
     getCars();
@@ -87,12 +84,24 @@ const Cars = () => {
     <Container maxW="container.xl" mt={10}>
       <TableTitle
         disabled={isLoading}
-        title="Autos"
+        title={
+          <>
+            <IconButton
+              variant="link"
+              colorScheme="white"
+              fontSize="20px"
+              onClick={backAction}
+              mr={3}
+              icon={<ArrowBackIcon />}
+            />
+            Autos
+          </>
+        }
         btnTitle="Agregar Auto"
         onClickBtn={() => setIsOpenForm(true)}
       />
       <DataTable loading={isLoading} columns={columns} data={tableList} />
-      <CreateForm isOpen={isOpenForm} onClose={onCloseForm} />
+      <CreateForm isOpen={isOpenForm} onClose={onCloseForm} clientId={id} />
     </Container>
   );
 };

@@ -10,17 +10,17 @@ import {
   Input,
   Select,
 } from "@chakra-ui/react";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import API from "../../lib/api";
 
-const initialState = { name: "" };
+const initialState = { name: "", car_id: null };
 
-const CreateForm = ({ isOpen, onClose, carSelected }) => {
+const CreateForm = ({ isOpen, onClose, carSelected, carList }) => {
   const cancelRef = React.useRef();
   const [formData, setFormData] = useState(initialState);
-  const [selectList] = useState([
-    { id: 1, name: "John", created_at: "2020-10-10" },
-    { id: 2, name: "Doe", created_at: "2020-10-10" },
-  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [clientSelected, setClientSelected] = useState(null);
+  const [clientList, setClientList] = useState([]);
 
   const handleChangeInput = ({ target }) => {
     setFormData((s) => ({ ...s, [target.name]: target.value }));
@@ -28,14 +28,36 @@ const CreateForm = ({ isOpen, onClose, carSelected }) => {
 
   const isDisabledBtn = () => Object.values(formData).some((data) => !Boolean(data));
 
-  const onSubmit = () => {
-    console.log(formData);
-    onClose(formData);
+  const onSubmit = async () => {
+    setIsLoading(true);
+    try {
+      const { data } = await API.post("/fixes", formData);
+      onClose(data);
+    } catch (err) {
+      console.log(err);
+    }
+    setIsLoading(false);
   };
 
+  const getClients = useCallback(async () => {
+    try {
+      const { data } = await API.get("/clients");
+      // console.log("clients", data);
+      setClientList(data);
+    } catch (err) {
+      console.log(err);
+    }
+  }, []);
+
   useEffect(() => {
-    setFormData(initialState);
-  }, [isOpen]);
+    if (isOpen) {
+      if (carSelected) setFormData({ ...initialState, car_id: carSelected });
+      else getClients();
+    } else {
+      setFormData(initialState);
+      setClientSelected(null);
+    }
+  }, [isOpen, getClients, carSelected]);
 
   return (
     <>
@@ -56,16 +78,39 @@ const CreateForm = ({ isOpen, onClose, carSelected }) => {
                 />
               </Flex>
               {!carSelected && (
-                <Flex my={5}>
-                  <Select placeholder="Seleccionar auto">
-                    {selectList.length > 0 &&
-                      selectList.map(({ id, name }) => (
-                        <option key={id} value={id}>
-                          {name}
-                        </option>
-                      ))}
-                  </Select>
-                </Flex>
+                <>
+                  <Flex my={5}>
+                    <Select
+                      value={clientSelected}
+                      onChange={(e) => setClientSelected(e.target.value)}
+                      placeholder="Seleccionar cliente"
+                    >
+                      {clientList.length > 0 &&
+                        clientList.map(({ id, name }) => (
+                          <option key={id} value={id}>
+                            {name}
+                          </option>
+                        ))}
+                    </Select>
+                  </Flex>
+                  <Flex my={5}>
+                    <Select
+                      value={formData.car_id}
+                      name="car_id"
+                      onChange={handleChangeInput}
+                      placeholder="Seleccionar auto"
+                    >
+                      {carList.length > 0 &&
+                        carList
+                          .filter((el) => el.client_id === clientSelected)
+                          .map(({ id, name }) => (
+                            <option key={id} value={id}>
+                              {name}
+                            </option>
+                          ))}
+                    </Select>
+                  </Flex>
+                </>
               )}
             </AlertDialogBody>
 
@@ -77,6 +122,7 @@ const CreateForm = ({ isOpen, onClose, carSelected }) => {
                 disabled={isDisabledBtn()}
                 colorScheme="red"
                 onClick={onSubmit}
+                isLoading={isLoading}
                 ml={3}
               >
                 Añadir

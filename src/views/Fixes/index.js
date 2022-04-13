@@ -1,19 +1,19 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Container, Text } from "@chakra-ui/react";
+import { Container } from "@chakra-ui/react";
+import { DateTime } from "luxon";
 import CreateForm from "./CreateForm";
 import DataTable from "../../components/DataTable";
 import { useLocation } from "react-router-dom";
 import TableTitle from "../../components/TableTitle";
+import API from "../../lib/api";
 
 const Fixes = () => {
   const { state } = useLocation();
   // console.log("loca", state);
   const [isOpenForm, setIsOpenForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [tableList, setTableList] = useState([
-    { id: 1, name: "John", created_at: "2020-10-10" },
-    { id: 2, name: "Doe", created_at: "2020-10-10" },
-  ]);
+  const [tableList, setTableList] = useState([]);
+  const [carList, setCarList] = useState([]);
 
   const columns = React.useMemo(
     () =>
@@ -26,6 +26,7 @@ const Fixes = () => {
             {
               Header: "Fecha de creacion",
               accessor: "created_at",
+              Cell: ({ value }) => DateTime.fromISO(value).toFormat("yyyy-MM-dd hh:mm"),
             },
           ]
         : [
@@ -35,36 +36,40 @@ const Fixes = () => {
             },
             {
               Header: "Auto",
-              accessor: "id",
-              Cell: ({ value }) => <Text>AutoName</Text>,
+              accessor: "car_id",
+              Cell: ({ value }) =>
+                carList.find((el) => el.id === value)?.name || "No hay datos",
             },
             {
               Header: "Fecha de creacion",
               accessor: "created_at",
+              Cell: ({ value }) => DateTime.fromISO(value).toFormat("yyyy-MM-dd hh:mm"),
             },
           ],
-    [state]
+    [state, carList]
   );
 
   const onCloseForm = (obj = false) => {
-    if (obj) setTableList((s) => [...s, { ...obj, created_at: "2022-10-10" }]);
+    if (obj) setTableList((s) => [obj, ...s]);
     setIsOpenForm(false);
   };
 
   const getFixes = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data } = await new Promise((res) => {
-        setTimeout(() => {
-          res({
-            data: [
-              { id: 1, name: "John", created_at: "2020-10-10" },
-              { id: 2, name: "Doe", created_at: "2020-10-10" },
-            ],
-          });
-        }, 1000);
-      });
+      const { data } = await API.get("/fixes", { params: { cardId: state } });
       setTableList(data);
+    } catch (err) {
+      console.log(err);
+    }
+    setIsLoading(false);
+  }, [state]);
+
+  const getCars = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { data } = await API.get("/cars");
+      setCarList(data);
     } catch (err) {
       console.log(err);
     }
@@ -73,7 +78,8 @@ const Fixes = () => {
 
   useEffect(() => {
     getFixes();
-  }, [getFixes]);
+    if (!state) getCars();
+  }, [getFixes, getCars, state]);
 
   return (
     <Container maxW="container.xl" mt={10}>
@@ -84,7 +90,12 @@ const Fixes = () => {
         onClickBtn={() => setIsOpenForm(true)}
       />
       <DataTable loading={isLoading} columns={columns} data={tableList} />
-      <CreateForm isOpen={isOpenForm} carSelected={state} onClose={onCloseForm} />
+      <CreateForm
+        carList={carList}
+        isOpen={isOpenForm}
+        carSelected={state}
+        onClose={onCloseForm}
+      />
     </Container>
   );
 };

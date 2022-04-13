@@ -10,12 +10,14 @@ import {
   Input,
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
+import API from "../../lib/api";
 
-const initialState = { name: "" };
+const initialState = { name: "", client_id: null };
 
-const CreateForm = ({ isOpen, onClose }) => {
+const CreateForm = ({ isOpen, onClose, clientId }) => {
   const cancelRef = React.useRef();
   const [formData, setFormData] = useState(initialState);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChangeInput = ({ target }) => {
     setFormData((s) => ({ ...s, [target.name]: target.value }));
@@ -23,13 +25,20 @@ const CreateForm = ({ isOpen, onClose }) => {
 
   const isDisabledBtn = () => Object.values(formData).some((data) => !Boolean(data));
 
-  const onSubmit = () => {
-    console.log(formData);
-    onClose(formData);
+  const onSubmit = async () => {
+    setIsLoading(true);
+    try {
+      const { data } = await API.post("/cars", formData);
+      onClose(data);
+    } catch (err) {
+      console.log(err);
+    }
+    setIsLoading(false);
   };
 
   useEffect(() => {
-    setFormData(initialState);
+    if (isOpen) setFormData({ ...initialState, client_id: clientId });
+    else setFormData(initialState);
   }, [isOpen]);
 
   return (
@@ -60,6 +69,7 @@ const CreateForm = ({ isOpen, onClose }) => {
                 disabled={isDisabledBtn()}
                 colorScheme="red"
                 onClick={onSubmit}
+                isLoading={isLoading}
                 ml={3}
               >
                 Añadir
