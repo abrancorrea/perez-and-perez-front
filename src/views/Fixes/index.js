@@ -9,7 +9,6 @@ import API from "../../lib/api";
 
 const Fixes = () => {
   const { state } = useLocation();
-  debugger
   // console.log("loca", state);
   const [isOpenForm, setIsOpenForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
