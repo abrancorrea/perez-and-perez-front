@@ -9,6 +9,7 @@ import API from "../../lib/api";
 
 const Fixes = () => {
   const { state } = useLocation();
+  debugger
   // console.log("loca", state);
   const [isOpenForm, setIsOpenForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +58,7 @@ const Fixes = () => {
   const getFixes = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data } = await API.get("/fixes", { params: { cardId: state } });
+      const { data } = await API.get("/fixes", { params: { carId: state } });
       setTableList(data);
     } catch (err) {
       console.log(err);
